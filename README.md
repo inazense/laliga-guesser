@@ -12,8 +12,14 @@ Una aplicación de Python que predice resultados de partidos de LaLiga usando ma
 
 ## Instalación
 
-1. Instala las dependencias:
+1. Instala las dependencias usando un entorno virtual:
 ```bash
+python3 -m venv .venv
+
+# Activarlo
+source .venv/bin/activate
+
+# Instalar dependencias
 pip install -r requirements.txt
 ```
 
