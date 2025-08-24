@@ -1,108 +1,109 @@
+
 # LaLiga Predictor
 
-Una aplicación de Python que predice resultados de partidos de LaLiga usando machine learning y datos históricos.
+A Python application that predicts LaLiga match results using machine learning and historical data.
 
-## Características
+## Features
 
-- **Carga automática** de datos CSV de múltiples temporadas
-- **Base de datos SQLite** para almacenamiento eficiente
-- **Generación de estadísticas** para cada equipo
-- **Modelo Random Forest** para predicciones
-- **Predicciones de probabilidades** para victoria/empate/derrota
+- **Automatic loading** of CSV data from multiple seasons
+- **SQLite database** for efficient storage
+- **Statistics generation** for each team
+- **Random Forest model** for predictions
+- **Probability predictions** for win/draw/loss
 
-## Instalación
+## Installation
 
-1. Instala las dependencias usando un entorno virtual:
+1. Install dependencies using a virtual environment:
 ```bash
 python3 -m venv .venv
 
-# Activarlo
+# Activate it
 source .venv/bin/activate
 
-# Instalar dependencias
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-## Uso
+## Usage
 
-### Ejecución completa
-Para ejecutar el pipeline completo (carga, procesamiento, entrenamiento y ejemplos):
+### Full execution
+To run the complete pipeline (loading, processing, training, and examples):
 
 ```bash
 python laliga_predictor.py
 ```
 
-### Predicción específica
-Para predecir un partido específico:
+### Specific prediction
+To predict a specific match:
 
 ```bash
-python predict_match.py "Equipo Local" "Equipo Visitante"
+python predict_match.py "Home Team" "Away Team"
 ```
 
-Ejemplo:
+Example:
 ```bash
 python predict_match.py "Valencia" "Barcelona"
 ```
 
-### Uso programático
+### Programmatic usage
 ```python
 from laliga_predictor import LaLigaPredictor
 
-# Crear predictor
+# Create predictor
 predictor = LaLigaPredictor()
 
-# Ejecutar pipeline completo
+# Run complete pipeline
 predictor.run_complete_pipeline()
 
-# Hacer predicción
+# Make prediction
 result = predictor.predict_match("Valencia", "Barcelona")
 print(result)
 ```
 
-## Estructura de datos
+## Data structure
 
-Los archivos CSV deben tener las siguientes columnas:
-- `Date`: Fecha del partido (dd/mm/yy)
-- `HomeTeam`: Equipo local
-- `AwayTeam`: Equipo visitante
-- `FTHG`: Goles del equipo local (tiempo completo)
-- `FTAG`: Goles del equipo visitante (tiempo completo)
-- `FTR`: Resultado final (H=Victoria local, D=Empate, A=Victoria visitante)
-- `HTHG`: Goles del equipo local (primer tiempo)
-- `HTAG`: Goles del equipo visitante (primer tiempo)
-- `HTR`: Resultado del primer tiempo
-- `HS`: Tiros del equipo local
-- `AS`: Tiros del equipo visitante
+CSV files must have the following columns:
+- `Date`: Match date (dd/mm/yy)
+- `HomeTeam`: Home team
+- `AwayTeam`: Away team
+- `FTHG`: Home team goals (full time)
+- `FTAG`: Away team goals (full time)
+- `FTR`: Final result (H=Home win, D=Draw, A=Away win)
+- `HTHG`: Home team goals (half time)
+- `HTAG`: Away team goals (half time)
+- `HTR`: Half time result
+- `HS`: Home team shots
+- `AS`: Away team shots
 
-## Características del modelo
+## Model features
 
-El modelo utiliza las siguientes estadísticas para cada equipo:
-- Promedio de goles marcados y concedidos
-- Tasa de victoria general y en casa/fuera
-- Promedio de tiros
-- Forma reciente (últimos 5 partidos)
-- Diferencias de estadísticas entre equipos
+The model uses the following statistics for each team:
+- Average goals scored and conceded
+- Overall and home/away win rate
+- Average shots
+- Recent form (last 5 matches)
+- Statistical differences between teams
 
-## Salida
+## Output
 
-El modelo devuelve las probabilidades para:
-- **Victoria Local**: Probabilidad de que gane el equipo local
-- **Empate**: Probabilidad de empate
-- **Victoria Visitante**: Probabilidad de que gane el equipo visitante
+The model returns probabilities for:
+- **Home Win**: Probability that the home team wins
+- **Draw**: Probability of a draw
+- **Away Win**: Probability that the away team wins
 
-## Archivos generados
+## Generated files
 
-- `laliga_data.db`: Base de datos SQLite con todos los partidos
-- Modelo entrenado (se guarda en memoria durante la sesión)
+- `laliga_data.db`: SQLite database with all matches
+- Trained model (stored in memory during the session)
 
-## Equipos disponibles
+## Available teams
 
-La aplicación automáticamente detecta todos los equipos disponibles en los archivos CSV.
+The application automatically detects all available teams in the CSV files.
 
 
-## Notas técnicas
+## Technical notes
 
-- El modelo usa Random Forest con 100 árboles
-- Se utilizan los últimos 10 partidos para calcular estadísticas
-- La precisión típica del modelo es del 50-60%
-- Los datos se dividen en 80% entrenamiento y 20% validación
+- The model uses Random Forest with 100 trees
+- The last 10 matches are used to calculate statistics
+- Typical model accuracy is 50-60%
+- Data is split into 80% training and 20% validation
