@@ -40,13 +40,22 @@ public class TrainerService {
         List<Match> allMatches = csvDataLoader.loadMatches(csvPath);
         log.info("Loaded {} total matches", allMatches.size());
         
+        // Filter valid matches
+        List<Match> validMatches = allMatches.stream()
+                .filter(m -> m.getFullTimeHomeGoals() != null && 
+                             m.getFullTimeAwayGoals() != null && 
+                             m.getFullTimeResult() != null)
+                .collect(Collectors.toList());
+        
+        log.info("Valid matches with complete data: {}", validMatches.size());
+        
         // Split by date (temporal split)
         LocalDate splitDate = LocalDate.of(trainTestSplitYear, 1, 1);
-        List<Match> trainMatches = allMatches.stream()
+        List<Match> trainMatches = validMatches.stream()
                 .filter(m -> m.getDate().isBefore(splitDate))
                 .collect(Collectors.toList());
         
-        List<Match> testMatches = allMatches.stream()
+        List<Match> testMatches = validMatches.stream()
                 .filter(m -> !m.getDate().isBefore(splitDate))
                 .collect(Collectors.toList());
         
@@ -57,7 +66,7 @@ public class TrainerService {
         poissonModel.train(trainMatches);
         
         // Evaluate on test set
-        Map<String, Object> metrics = evaluate(testMatches, allMatches);
+        Map<String, Object> metrics = evaluate(testMatches, validMatches);
         
         // Save model
         Map<String, Object> metadata = new HashMap<>();

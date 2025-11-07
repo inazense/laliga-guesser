@@ -47,8 +47,16 @@ public class PredictorService {
         log.info("Loading model...");
         
         // Load historical matches for feature building
-        historicalMatches = csvDataLoader.loadMatches(csvPath);
-        log.info("Loaded {} historical matches", historicalMatches.size());
+        List<Match> allMatches = csvDataLoader.loadMatches(csvPath);
+        
+        // Filter valid matches
+        historicalMatches = allMatches.stream()
+                .filter(m -> m.getFullTimeHomeGoals() != null && 
+                             m.getFullTimeAwayGoals() != null && 
+                             m.getFullTimeResult() != null)
+                .collect(java.util.stream.Collectors.toList());
+        
+        log.info("Loaded {} valid historical matches (filtered from {})", historicalMatches.size(), allMatches.size());
         
         // Try to load saved model
         try {

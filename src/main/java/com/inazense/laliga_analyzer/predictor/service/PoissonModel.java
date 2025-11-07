@@ -27,13 +27,22 @@ public class PoissonModel {
     public void train(List<Match> trainingMatches) {
         teamStatsMap = new HashMap<>();
         
+        // Filter out matches without complete data
+        List<Match> validMatches = trainingMatches.stream()
+                .filter(m -> m.getFullTimeHomeGoals() != null && 
+                             m.getFullTimeAwayGoals() != null && 
+                             m.getFullTimeResult() != null)
+                .collect(java.util.stream.Collectors.toList());
+        
+        log.info("Training with {} valid matches (filtered from {})", validMatches.size(), trainingMatches.size());
+        
         // Calculate overall league statistics
         int totalGoals = 0;
-        int totalMatches = trainingMatches.size();
+        int totalMatches = validMatches.size();
         int totalHomeWins = 0;
         
         // First pass: collect basic stats
-        for (Match match : trainingMatches) {
+        for (Match match : validMatches) {
             totalGoals += match.getFullTimeHomeGoals() + match.getFullTimeAwayGoals();
             if ("H".equals(match.getFullTimeResult())) {
                 totalHomeWins++;
