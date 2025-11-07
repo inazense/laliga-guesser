@@ -1,10 +1,22 @@
 # LaLiga Guesser
 
-A Spring Boot application to download, analyze, and predict Spanish LaLiga football match results using historical data.
+A Spring Boot application that uses machine learning to predict Spanish LaLiga football match results based on 25 years of historical data.
 
 ## Description
 
-This project fetches historical match data from football-data.co.uk and aims to provide predictions for future LaLiga matches based on statistical analysis.
+This project processes historical match data from football-data.co.uk (2000-2025) and uses a Poisson-based statistical model to predict match outcomes. The system provides:
+- Win/Draw/Loss probabilities
+- Top 3 most likely scores with percentages
+- Feature importance explanations
+- REST API for predictions
+
+## Features
+
+- **Poisson Baseline Model**: Uses team attack/defense strength and home advantage
+- **Feature Engineering**: Historical performance, form, head-to-head records
+- **Time-based Evaluation**: Proper temporal split to avoid data leakage
+- **REST API**: Easy-to-use endpoints for predictions and model status
+- **Model Persistence**: Save and load trained models
 
 ## Prerequisites
 
@@ -13,19 +25,122 @@ This project fetches historical match data from football-data.co.uk and aims to 
 
 ## Getting Started
 
-### Build the project
+### 1. Build the project
 
 ```bash
 ./gradlew build
 ```
 
-### Run the application
+### 2. Train the model
+
+Train and evaluate the prediction model:
+
+```bash
+./gradlew evaluateModel
+```
+
+This will:
+- Load 25 years of historical LaLiga data
+- Train on matches before 2018
+- Evaluate on 2018-2019 seasons
+- Display accuracy, Brier score, and log-loss metrics
+- Save the trained model to the `models/` directory
+
+Example output:
+```
+Training set: 6,629 matches (before 2018-01-01)
+Test set: 591 matches (from 2018-01-01 onwards)
+Accuracy: 0.48
+Brier Score: 0.21
+Log Loss: 1.03
+```
+
+### 3. Run the application
+
+Start the REST API server:
 
 ```bash
 ./gradlew bootRun
 ```
 
 The application will start on `http://localhost:8080`
+
+### 4. Make predictions
+
+Use the prediction API:
+
+```bash
+curl -X POST http://localhost:8080/api/predict \
+  -H "Content-Type: application/json" \
+  -d '{
+    "date": "2019-05-20",
+    "homeTeam": "Barcelona",
+    "awayTeam": "Real Madrid",
+    "context": {
+      "matchday": 38,
+      "competition": "LaLiga"
+    }
+  }'
+```
+
+Response:
+```json
+{
+  "probabilities": {
+    "homeWin": 0.57,
+    "draw": 0.20,
+    "awayWin": 0.23
+  },
+  "topScores": [
+    {"score": "2-1", "prob": 0.089},
+    {"score": "1-1", "prob": 0.076},
+    {"score": "3-1", "prob": 0.070}
+  ],
+  "prediction": {
+    "outcome": "homeWin",
+    "confidence": 0.57
+  },
+  "explain": [
+    {"feature": "home_attack_strength", "impact": 0.776},
+    {"feature": "away_attack_strength", "impact": 0.748},
+    {"feature": "home_recent_form", "impact": 0.270}
+  ],
+  "modelVersion": "v0.1"
+}
+```
+
+## API Endpoints
+
+### Prediction
+
+**POST** `/api/predict`
+
+Predict match outcome and scores.
+
+Request body:
+```json
+{
+  "date": "2019-05-20",
+  "homeTeam": "Barcelona",
+  "awayTeam": "Real Madrid",
+  "context": {
+    "matchday": 38,
+    "competition": "LaLiga"
+  }
+}
+```
+
+### Model Status
+
+**GET** `/api/predict/status`
+
+Check if the model is loaded and ready.
+
+### Reload Model
+
+**POST** `/api/predict/reload`
+
+Reload the model from disk.
 
 ## API Documentation
 
@@ -40,209 +155,98 @@ http://localhost:8080/swagger-ui.html
 The application settings can be configured in `src/main/resources/application.properties`:
 
 ```properties
-# Downloader settings
-downloader.baseUrl=https://www.football-data.co.uk/mmz4281/
-downloader.firstSeason=00
-downloader.lastSeason=25
-downloader.filename=SPI.csv
-downloader.csvFilename=laliga.csv
+# Predictor configuration
+predictor.csvPath=laliga.csv
+predictor.modelsPath=models
+predictor.modelVersion=v0.1
+predictor.trainTestSplitYear=2018
+predictor.windowSize=10
+predictor.minMatchesForFeatures=5
 ```
+
+## Model Performance
+
+Current model performance (2018-2019 test set):
+
+| Metric | Value |
+|--------|-------|
+| Accuracy | 48.05% |
+| Brier Score | 0.205 |
+| Log Loss | 1.031 |
+
+**Confusion Matrix:**
+```
+           Actual
+         H    D    A
+Pred H  191   88   72
+     D   16   12   10
+     A   63   58   81
+```
+
+The model performs better than random chance (33%) and provides calibrated probability estimates.
+
+## Development
+
+### Run tests
+
+```bash
+./gradlew test
+```
+
+### Train model only
+
+```bash
+./gradlew trainModel
+```
+
+### Build Docker image
+
+```bash
+docker build -t laliga-guesser .
+docker run -p 8080:8080 laliga-guesser
+```
+
+## Technical Details
+
+### Architecture
+
+- **Data Loading**: CSV parser with date normalization and team name mapping
+- **Feature Engineering**: Rolling windows for recent form, head-to-head statistics
+- **Model**: Poisson distribution for goal prediction with team strength parameters
+- **Evaluation**: Time-based split, Brier score, log-loss, accuracy metrics
+
+### Algorithm
+
+The prediction model uses:
+1. **Team Strength**: Attack and defense ratings based on historical performance
+2. **Home Advantage**: Statistical advantage for home teams
+3. **Recent Form**: Performance in last N games
+4. **Head-to-Head**: Historical results between specific teams
+
+Expected goals are calculated as:
+```
+λ_home = home_attack * away_defense * home_advantage * league_avg
+λ_away = away_attack * home_defense * league_avg
+```
+
+Then Poisson distributions generate score probabilities.
 
 ## License
 
 This project is for educational and personal use.
 
-## Notes from football-data.co.uk
+## Data Source
 
-l data is in csv format, ready for use within standard spreadsheet applications. Please note that some abbreviations are no longer in use (in particular odds from specific bookmakers no longer used) and refer to data collected in earlier seasons. For a current list of what bookmakers are included in the dataset please visit http://www.football-data.co.uk/matches.php
+Historical data from [football-data.co.uk](http://www.football-data.co.uk/)
 
-Key to results data:
+### Key to CSV Data
 
-- Div = League Division
-- Date = Match Date (dd/mm/yy)
-- Time = Time of match kick off
-- HomeTeam = Home Team
-- AwayTeam = Away Team
-- FTHG and HG = Full Time Home Team Goals
-- FTAG and AG = Full Time Away Team Goals
-- FTR and Res = Full Time Result (H=Home Win, D=Draw, A=Away Win)
-- HTHG = Half Time Home Team Goals
-- HTAG = Half Time Away Team Goals
-- HTR = Half Time Result (H=Home Win, D=Draw, A=Away Win)
+- **Div** = League Division
+- **Date** = Match Date (dd/mm/yy)
+- **HomeTeam** = Home Team
+- **AwayTeam** = Away Team
+- **FTHG** = Full Time Home Goals
+- **FTAG** = Full Time Away Goals
+- **FTR** = Full Time Result (H=Home Win, D=Draw, A=Away Win)
 
-Match Statistics (where available)
-- Attendance = Crowd Attendance
-- Referee = Match Referee
-- HS = Home Team Shots
-- AS = Away Team Shots
-- HST = Home Team Shots on Target
-- AST = Away Team Shots on Target
-- HHW = Home Team Hit Woodwork
-- AHW = Away Team Hit Woodwork
-- HC = Home Team Corners
-- AC = Away Team Corners
-- HF = Home Team Fouls Committed
-- AF = Away Team Fouls Committed
-- HFKC = Home Team Free Kicks Conceded
-- AFKC = Away Team Free Kicks Conceded
-- HO = Home Team Offsides
-- AO = Away Team Offsides
-- HY = Home Team Yellow Cards
-- AY = Away Team Yellow Cards
-- HR = Home Team Red Cards
-- AR = Away Team Red Cards
-- HBP = Home Team Bookings Points (10 = yellow, 25 = red)
-- ABP = Away Team Bookings Points (10 = yellow, 25 = red)
-
-Note that Free Kicks Conceeded includes fouls, offsides and any other offense commmitted and will always be equal to or higher than the number of fouls. Fouls make up the vast majority of Free Kicks Conceded. Free Kicks Conceded are shown when specific data on Fouls are not available (France 2nd, Belgium 1st and Greece 1st divisions).
-
-Note also that English and Scottish yellow cards do not include the initial yellow card when a second is shown to a player converting it into a red, but this is included as a yellow (plus red) for European games.
-
-
-The following key to betting odds data is described below. These are for pre-closing odds. For the closing odds, as below but with an additional "C" character following the bookmaker abbreviation/Max/Avg (e.g. B365CH = closing Bet365 home win odds).
-
-- 1XBH = 1XBet home win odds
-- 1XBD = 1XBet draw odds
-- 1XBA = 1XBet away win odds
-- B365H = Bet365 home win odds
-- B365D = Bet365 draw odds
-- B365A = Bet365 away win odds
-- BFH = Betfair home win odds
-- BFD = Betfair draw odds
-- BFA = Betfair away win odds
-- BFDH = Betfred home win odds
-- BFDD = Betfred draw odds
-- BFDA = Betfred away win odds
-- BMGMH = BetMGM home win odds
-- BMGMD = BetMGM draw odds
-- BMGMA = BetMGM away win odds
-- BVH = Betvictor home win odds
-- BVD = Betvictor draw odds
-- BVA = Betvictor away win odds
-- BSH = Blue Square home win odds
-- BSD = Blue Square draw odds
-- BSA = Blue Square away win odds
-- BWH = Bet&Win home win odds
-- BWD = Bet&Win draw odds
-- BWA = Bet&Win away win odds
-- CLH = Coral home win odds
-- CLD = Coral draw odds
-- CLA = Coral away win odds
-- GBH = Gamebookers home win odds
-- GBD = Gamebookers draw odds
-- GBA = Gamebookers away win odds
-- IWH = Interwetten home win odds
-- IWD = Interwetten draw odds
-- IWA = Interwetten away win odds
-- LBH = Ladbrokes home win odds
-- LBD = Ladbrokes draw odds
-- LBA = Ladbrokes away win odds
-- PSH and PH = Pinnacle home win odds
-- PSD and PD = Pinnacle draw odds
-- PSA and PA = Pinnacle away win odds
-- SOH = Sporting Odds home win odds
-- SOD = Sporting Odds draw odds
-- SOA = Sporting Odds away win odds
-- SBH = Sportingbet home win odds
-- SBD = Sportingbet draw odds
-- SBA = Sportingbet away win odds
-- SJH = Stan James home win odds
-- SJD = Stan James draw odds
-- SJA = Stan James away win odds
-- SYH = Stanleybet home win odds
-- SYD = Stanleybet draw odds
-- SYA = Stanleybet away win odds
-- VCH = VC Bet home win odds (now BetVictor, see above)
-- VCD = VC Bet draw odds (now BetVictor, see above)
-- VCA = VC Bet away win odds (now BetVictor, see above)
-- WHH = William Hill home win odds
-- WHD = William Hill draw odds
-- WHA = William Hill away win odds
-
-- Bb1X2 = Number of BetBrain bookmakers used to calculate match odds averages and maximums
-- BbMxH = Betbrain maximum home win odds
-- BbAvH = Betbrain average home win odds
-- BbMxD = Betbrain maximum draw odds
-- BbAvD = Betbrain average draw win odds
-- BbMxA = Betbrain maximum away win odds
-- BbAvA = Betbrain average away win odds
-
-- MaxH = Market maximum home win odds
-- MaxD = Market maximum draw win odds
-- MaxA = Market maximum away win odds
-- AvgH = Market average home win odds
-- AvgD = Market average draw win odds
-- AvgA = Market average away win odds
-
-- BFEH = Betfair Exchange home win odds
-- BFED = Betfair Exchange draw odds
-- BFEA = Betfair Exchange away win odds
-
-
-
-Key to total goals betting odds:
-
-- BbOU = Number of BetBrain bookmakers used to calculate over/under 2.5 goals (total goals) averages and maximums
-- BbMx>2.5 = Betbrain maximum over 2.5 goals
-- BbAv>2.5 = Betbrain average over 2.5 goals
-- BbMx<2.5 = Betbrain maximum under 2.5 goals
-- BbAv<2.5 = Betbrain average under 2.5 goals
-
-- GB>2.5 = Gamebookers over 2.5 goals
-- GB<2.5 = Gamebookers under 2.5 goals
-- B365>2.5 = Bet365 over 2.5 goals
-- B365<2.5 = Bet365 under 2.5 goals
-- P>2.5 = Pinnacle over 2.5 goals
-- P<2.5 = Pinnacle under 2.5 goals
-- Max>2.5 = Market maximum over 2.5 goals
-- Max<2.5 = Market maximum under 2.5 goals
-- Avg>2.5 = Market average over 2.5 goals
-- Avg<2.5 = Market average under 2.5 goals
-
-
-
-Key to Asian handicap betting odds:
-
-- BbAH = Number of BetBrain bookmakers used to Asian handicap averages and maximums
-- BbAHh = Betbrain size of handicap (home team)
-- AHh = Market size of handicap (home team) (since 2019/2020)
-- BbMxAHH = Betbrain maximum Asian handicap home team odds
-- BbAvAHH = Betbrain average Asian handicap home team odds
-- BbMxAHA = Betbrain maximum Asian handicap away team odds
-- BbAvAHA = Betbrain average Asian handicap away team odds
-
-- GBAHH = Gamebookers Asian handicap home team odds
-- GBAHA = Gamebookers Asian handicap away team odds
-- GBAH = Gamebookers size of handicap (home team)
-- LBAHH = Ladbrokes Asian handicap home team odds
-- LBAHA = Ladbrokes Asian handicap away team odds
-- LBAH = Ladbrokes size of handicap (home team)
-- B365AHH = Bet365 Asian handicap home team odds
-- B365AHA = Bet365 Asian handicap away team odds
-- B365AH = Bet365 size of handicap (home team)
-- PAHH = Pinnacle Asian handicap home team odds
-- PAHA = Pinnacle Asian handicap away team odds
-- MaxAHH = Market maximum Asian handicap home team odds
-- MaxAHA = Market maximum Asian handicap away team odds
-- AvgAHH = Market average Asian handicap home team odds
-- AvgAHA = Market average Asian handicap away team odds
-
-
-
-Football-Data would like to acknowledge the following sources which have been utilised in the compilation of Football-Data's results and odds files.
-
-
-Current results (full time, half time)
-XScores - http://www.xscores .com
-
-Match statistics
-BBC, Flashscore, ESPN Soccer, Bundesliga.de, Gazzetta.it and Football.fr
-
-Bookmakers betting odds
-Betbrain.com
-Oddsportal.com
-Individual bookmakers
-
-Betting odds for weekend games are collected Friday afternoons, and on Tuesday afternoons for midweek games.
-
-Additional match statistics (corners, shots, bookings, referee etc.) for the 2000/01 and 2001/02 seasons for the English, Scottish and German leagues were provided by Sports.com (now under new ownership and no longer available).
+For full data dictionary, see the [football-data.co.uk notes](http://www.football-data.co.uk/notes.txt).

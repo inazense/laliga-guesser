@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.ComponentScan;
 
 import java.util.Map;
@@ -14,11 +15,13 @@ import java.util.Map;
 @ComponentScan(basePackages = "com.inazense.laliga_analyzer")
 @RequiredArgsConstructor
 @Slf4j
+@ConditionalOnProperty(name = "app.runner", havingValue = "evaluation")
 public class EvaluationRunner implements CommandLineRunner {
     
     private final TrainerService trainerService;
     
     public static void main(String[] args) {
+        System.setProperty("app.runner", "evaluation");
         SpringApplication.run(EvaluationRunner.class, args);
     }
     
