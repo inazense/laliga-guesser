@@ -85,3 +85,6 @@ nbdist/
 .cursorindexingignore
 .gradle
 .idea
+
+# ML Models
+models/

@@ -27,6 +27,9 @@ repositories {
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.14'
+	implementation 'org.apache.commons:commons-math3:3.6.1'
+	implementation 'com.opencsv:opencsv:5.9'
+	implementation 'com.fasterxml.jackson.core:jackson-databind'
     compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	annotationProcessor 'org.projectlombok:lombok'
@@ -34,6 +37,24 @@ dependencies {
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
+springBoot {
+	mainClass = 'com.inazense.laliga_analyzer.LaligaAnalyzerApplication'
+}
+
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+task trainModel(type: JavaExec) {
+	group = 'prediction'
+	description = 'Train the prediction model'
+	mainClass = 'com.inazense.laliga_analyzer.predictor.TrainingRunner'
+	classpath = sourceSets.main.runtimeClasspath
+}
+
+task evaluateModel(type: JavaExec) {
+	group = 'prediction'
+	description = 'Evaluate the prediction model'
+	mainClass = 'com.inazense.laliga_analyzer.predictor.EvaluationRunner'
+	classpath = sourceSets.main.runtimeClasspath
 }

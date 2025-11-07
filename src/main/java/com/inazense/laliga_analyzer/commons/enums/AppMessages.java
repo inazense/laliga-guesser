@@ -6,8 +6,10 @@ import lombok.Getter;
 public enum AppMessages {
 	
 	DOWNLOADER_DOWNLOAD_OK("D_00001", "LaLiga data downloaded successfully."),
-	DOWNLOADER_DOWNLOAD_FAIL("D_00002", "Failed to download LaLiga data.");
-	
+	DOWNLOADER_DOWNLOAD_FAIL("D_00002", "Failed to download LaLiga data."),
+	PREDICTOR_PREDICT_OK("P_00001", "Prediction done."),
+	PREDICTOR_PREDICT_FAIL_MODEL("P_00002", "Model not loaded. Please train the model first."),
+	PREDICTOR_PREDICT_FAIL_DATE("P_00003", "Invalid date format. Use yyyy-MM-dd");
 	private String code;
 	private String message;
 	
