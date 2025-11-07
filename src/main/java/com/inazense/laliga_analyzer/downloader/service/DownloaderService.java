@@ -64,7 +64,6 @@ public class DownloaderService {
 							writer.println(line);
 						}
 					}
-					IO.println("Procesado: " + url);
 				} catch (IOException e) {
 					response = responseService.createResponse(DOWNLOADER_DOWNLOAD_FAIL, e.getMessage());
 					
