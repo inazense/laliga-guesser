@@ -34,15 +34,6 @@ public class DownloaderService {
 	@Value("${downloader.filename}")
 	private String filename;
 
-	@Value("${downloader.tmpFilename}")
-	private String tmpFilename;
-
-	@Value("${downloader.splitter}")
-	private String splitter;
-
-	@Value("${downloader.seasonColumn}")
-	private String seasonColumn;
-
 	@Value("${downloader.csvFilename}")
 	private String csvFilename;
 
