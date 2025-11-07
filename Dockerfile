@@ -24,8 +24,8 @@ FROM eclipse-temurin:25-jre
 
 WORKDIR /app
 
-# Copy the built JAR from build stage
-COPY --from=build /app/build/libs/laliga-1.0.jar app.jar
+# Copy the built JAR from build stage (using wildcard to handle any version)
+COPY --from=build /app/build/libs/*.jar app.jar
 
 # Copy data file
 COPY laliga.csv .

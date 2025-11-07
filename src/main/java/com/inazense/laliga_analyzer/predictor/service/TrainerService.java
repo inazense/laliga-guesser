@@ -30,7 +30,7 @@ public class TrainerService {
     @Value("${predictor.csvPath:laliga.csv}")
     private String csvPath;
     
-    @Value("${predictor.trainTestSplitYear:2023}")
+    @Value("${predictor.trainTestSplitYear:2018}")
     private int trainTestSplitYear;
     
     public Map<String, Object> trainAndEvaluate() throws IOException, CsvException {
