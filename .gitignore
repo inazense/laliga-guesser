@@ -83,3 +83,5 @@ nbdist/
 # Cursor
 .cursorignore
 .cursorindexingignore
+.gradle
+.idea
